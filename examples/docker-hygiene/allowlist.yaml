@@ -1,0 +1,55 @@
+# A command runs only if this file allows it and the step was approved.
+# There is no shell: no pipes, redirects, globs, or $(...).
+# `never` wins over `allow`. `rm -rf` is also refused in code.
+
+timeout_seconds: 20
+max_output_chars: 4000
+
+never:
+  - [rm, "-rf"]
+  - [rm, "-fr"]
+  - [mkfs]
+  - [mkfs.ext4]
+  - [dd]
+  - [shutdown]
+  - [reboot]
+  - [poweroff]
+  - [halt]
+
+allow:
+  - bin: df
+    args_regex: '^-hT?( \S+)?$'
+    mode: read
+
+  - bin: du
+    args_regex: '^-(sh|xh|ah)( \S+)+$'
+    mode: read
+
+  - bin: docker
+    args_prefix: [ps]
+    mode: read
+
+  - bin: docker
+    args_prefix: [system, df]
+    mode: read
+
+  - bin: docker
+    args_prefix: [images]
+    mode: read
+
+  - bin: docker
+    args_prefix: [inspect]
+    mode: read
+
+  - bin: docker
+    args_prefix: [logs]
+    mode: read
+
+  # Writes. They still wait for the step to be approved.
+  - bin: docker
+    args_prefix: [image, prune]
+    mode: write
+
+  - bin: docker
+    args_prefix: [container, prune]
+    mode: write
