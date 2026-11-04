@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -7,21 +8,30 @@ from runbook_pilot.notebook import load_notebook
 
 ROOT = Path(__file__).resolve().parents[1]
 runner = CliRunner()
+# On GitHub Actions, Typer forces a color terminal and Rich styles each
+# piece of a long option separately, so "--dry-run" is not one substring.
+_ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def _plain(text: str) -> str:
+    return _ANSI.sub("", text)
 
 
 def test_help_lists_the_commands():
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    assert "run" in result.stdout
-    assert "resume" in result.stdout
+    help_text = _plain(result.stdout)
+    assert "run" in help_text
+    assert "resume" in help_text
     version = runner.invoke(app, ["--version"])
     assert version.exit_code == 0
-    assert "0.1.0" in version.stdout
+    assert "0.1.0" in _plain(version.stdout)
     run_help = runner.invoke(app, ["run", "--help"])
     assert run_help.exit_code == 0
-    assert "--dry-run" in run_help.stdout
-    assert "--allowlist" in run_help.stdout
-    assert "--provider" in run_help.stdout
+    run_text = _plain(run_help.stdout)
+    assert "--dry-run" in run_text
+    assert "--allowlist" in run_text
+    assert "--provider" in run_text
 
 
 def test_dry_run_with_the_fake_provider(tmp_path):
